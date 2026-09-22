@@ -1,0 +1,3 @@
+xml_path,archive_id,document_id,volume_id,page_id,year,writer_id,pseudo_writer_id
+collection_a/page/page_0001.xml,SE_RA_EXAMPLE,volume_001,volume_001,volume_001/page_0001,1752,,volume_001_hand_01
+

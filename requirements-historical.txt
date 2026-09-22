@@ -1,0 +1,4 @@
+# Install after requirements.txt. The extension intentionally reuses the
+# versions pinned by the official repository.
+pytest>=8.0
+
