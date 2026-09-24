@@ -7,7 +7,7 @@ from pathlib import Path
 
 from PIL import Image
 
-from .common import read_jsonl, stable_fraction, write_jsonl
+from .common import MAX_LINE_WIDTH, read_jsonl, stable_fraction, write_jsonl
 
 
 def paste_pair(style: Image.Image, target: Image.Image, gap: int, max_width: int) -> tuple[Image.Image, int]:
@@ -31,7 +31,7 @@ def main() -> None:
     parser.add_argument("--pair-by", choices=["page_id", "pseudo_writer_id"], default="page_id")
     parser.add_argument("--pairs-per-target", type=int, default=1)
     parser.add_argument("--gap", type=int, default=8)
-    parser.add_argument("--max-width", type=int, default=768)
+    parser.add_argument("--max-width", type=int, default=MAX_LINE_WIDTH)
     parser.add_argument("--seed", type=int, default=24)
     parser.add_argument("--use", choices=["raw", "normalized"], default="normalized")
     args = parser.parse_args()
@@ -76,4 +76,3 @@ def main() -> None:
 
 if __name__ == "__main__":
     main()
-

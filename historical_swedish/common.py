@@ -9,10 +9,12 @@ from pathlib import Path
 from typing import Any, Iterable
 
 import numpy as np
-from PIL import Image, ImageEnhance, ImageFilter, ImageOps
+from PIL import Image, ImageDraw, ImageEnhance, ImageFilter, ImageOps
 
 
 IMAGE_EXTENSIONS = (".jpg", ".jpeg", ".png", ".tif", ".tiff", ".jp2")
+LINE_HEIGHT = 64
+MAX_LINE_WIDTH = 768
 
 
 def stable_fraction(value: str, seed: int = 24) -> float:
@@ -52,15 +54,26 @@ def find_page_image(xml_path: Path, image_filename: str | None) -> Path:
 
 
 def crop_polygon(image: Image.Image, points: list[tuple[int, int]], padding: int = 8) -> Image.Image:
+    """Crop around a polygon and replace everything outside it with white."""
     xs, ys = zip(*points)
     left = max(0, min(xs) - padding)
     top = max(0, min(ys) - padding)
     right = min(image.width, max(xs) + padding + 1)
     bottom = min(image.height, max(ys) + padding + 1)
-    return image.crop((left, top, right, bottom))
+    crop = image.crop((left, top, right, bottom))
+    mask = Image.new("L", crop.size, 0)
+    translated_points = [(x - left, y - top) for x, y in points]
+    ImageDraw.Draw(mask).polygon(translated_points, fill=255)
+    background = Image.new(image.mode, crop.size, "white")
+    background.paste(crop, mask=mask)
+    return background
 
 
-def to_line_height(image: Image.Image, height: int = 64, max_width: int = 768) -> Image.Image:
+def to_line_height(
+    image: Image.Image,
+    height: int = LINE_HEIGHT,
+    max_width: int = MAX_LINE_WIDTH,
+) -> Image.Image:
     image = image.convert("RGB")
     width = max(1, round(image.width * height / max(1, image.height)))
     image = image.resize((width, height), Image.Resampling.LANCZOS)
@@ -71,6 +84,7 @@ def to_line_height(image: Image.Image, height: int = 64, max_width: int = 768) -
 
 def normalize_background(image: Image.Image) -> Image.Image:
     """Conservative grayscale illumination correction; deliberately no binarization."""
+    white_pixels = np.all(np.asarray(image.convert("RGB")) == 255, axis=2)
     gray = ImageOps.grayscale(image)
     background = gray.filter(ImageFilter.GaussianBlur(radius=max(3, gray.height // 8)))
     arr = np.asarray(gray, dtype=np.float32)
@@ -78,7 +92,9 @@ def normalize_background(image: Image.Image) -> Image.Image:
     corrected = np.clip(arr - bg + 235.0, 0, 255).astype(np.uint8)
     result = Image.fromarray(corrected, mode="L")
     result = ImageOps.autocontrast(result, cutoff=(0.2, 0.2))
-    return ImageEnhance.Contrast(result).enhance(1.05)
+    result = ImageEnhance.Contrast(result).enhance(1.05)
+    result.paste(255, mask=Image.fromarray(white_pixels))
+    return result
 
 
 def image_bytes(image: Image.Image, mode: str = "RGB") -> bytes:
@@ -97,4 +113,3 @@ def write_jsonl(path: Path, rows: Iterable[dict[str, Any]]) -> None:
     with path.open("w", encoding="utf-8") as handle:
         for row in rows:
             handle.write(json.dumps(row, ensure_ascii=False) + "\n")
-

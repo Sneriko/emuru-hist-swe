@@ -7,15 +7,15 @@ from pathlib import Path
 
 from PIL import Image
 
-from .common import read_jsonl
+from .common import LINE_HEIGHT, MAX_LINE_WIDTH, read_jsonl
 
 
 def main() -> None:
     parser = argparse.ArgumentParser(description="Validate manifests before sharding/training.")
     parser.add_argument("--input", type=Path, required=True)
     parser.add_argument("--image-field", default="pair_path")
-    parser.add_argument("--max-width", type=int, default=768)
-    parser.add_argument("--expected-height", type=int, default=64)
+    parser.add_argument("--max-width", type=int, default=MAX_LINE_WIDTH)
+    parser.add_argument("--expected-height", type=int, default=LINE_HEIGHT)
     args = parser.parse_args()
     rows = read_jsonl(args.input)
     errors = Counter()
@@ -54,4 +54,3 @@ def main() -> None:
 
 if __name__ == "__main__":
     main()
-
