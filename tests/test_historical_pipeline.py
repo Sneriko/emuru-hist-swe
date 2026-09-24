@@ -8,7 +8,7 @@ from pathlib import Path
 
 from PIL import Image, ImageDraw
 
-from historical_swedish.common import read_jsonl, write_jsonl
+from historical_swedish.common import crop_polygon, normalize_background, read_jsonl, write_jsonl
 from historical_swedish.extract_page_lines import extract
 
 
@@ -22,6 +22,20 @@ PAGE_XML = """<?xml version="1.0" encoding="UTF-8"?>
   </Page>
 </PcGts>
 """
+
+
+def test_crop_polygon_masks_background_white() -> None:
+    image = Image.new("RGB", (20, 20), "black")
+
+    crop = crop_polygon(image, [(5, 5), (15, 5), (10, 15)], padding=2)
+
+    assert crop.size == (15, 15)
+    assert crop.getpixel((0, 0)) == (255, 255, 255)
+    assert crop.getpixel((7, 7)) == (0, 0, 0)
+    assert crop.getpixel((14, 14)) == (255, 255, 255)
+    normalized = normalize_background(crop)
+    assert normalized.getpixel((0, 0)) == 255
+    assert normalized.getpixel((14, 14)) == 255
 
 
 def test_page_to_pairs_and_shards(tmp_path: Path) -> None:
@@ -51,6 +65,7 @@ def test_page_to_pairs_and_shards(tmp_path: Path) -> None:
     ))
     rows = read_jsonl(extracted / "lines.jsonl")
     assert len(rows) == 2
+    assert all(row["height"] == 64 for row in rows)
     assert "Å" in (extracted / "charset.txt").read_text(encoding="utf-8")
     for row in rows:
         row["split"] = "train"
@@ -80,4 +95,3 @@ def test_page_to_pairs_and_shards(tmp_path: Path) -> None:
     listed = (shard_dir / "train_shards.txt").read_text(encoding="utf-8").splitlines()
     assert len(listed) == 2
     assert json.loads((shard_dir / "counts.json").read_text(encoding="utf-8"))["train"] == 2
-

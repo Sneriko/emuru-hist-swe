@@ -109,7 +109,10 @@ python -m historical_swedish.make_shards \
   --mode emuru
 ```
 
-The line manifest includes raw and conservatively background-normalized crops.
+The line manifest includes 64-pixel-high raw and conservatively
+background-normalized crops, with a maximum width of 768 pixels. PAGE line
+polygons are used as masks, so pixels outside each polygon are placed on a white
+background instead of retaining the rectangular bounding-box background.
 No aggressive binarization is performed. The pair builder selects a different
 style line from the same page (or pseudo-writer), concatenates style and target
 images, and sets `json.text` to `style_text + " " + gen_text`. This reproduces

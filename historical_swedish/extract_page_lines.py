@@ -10,6 +10,8 @@ from PIL import Image
 from tqdm import tqdm
 
 from .common import (
+    LINE_HEIGHT,
+    MAX_LINE_WIDTH,
     crop_polygon,
     find_page_image,
     normalize_background,
@@ -142,13 +144,13 @@ def extract(args: argparse.Namespace) -> None:
 
 
 def main() -> None:
-    parser = argparse.ArgumentParser(description="Extract 64px line crops and text from PAGE-XML.")
+    parser = argparse.ArgumentParser(description="Extract masked line crops and text from PAGE-XML.")
     parser.add_argument("--root", type=Path, required=True)
     parser.add_argument("--output", type=Path, required=True)
     parser.add_argument("--metadata-csv", type=Path)
     parser.add_argument("--xml-glob", default="*.xml")
-    parser.add_argument("--height", type=int, default=64)
-    parser.add_argument("--max-width", type=int, default=768)
+    parser.add_argument("--height", type=int, default=LINE_HEIGHT)
+    parser.add_argument("--max-width", type=int, default=MAX_LINE_WIDTH)
     parser.add_argument("--padding", type=int, default=8)
     parser.add_argument("--min-width", type=int, default=24)
     parser.add_argument("--min-chars", type=int, default=2)
@@ -159,4 +161,3 @@ def main() -> None:
 
 if __name__ == "__main__":
     main()
-
