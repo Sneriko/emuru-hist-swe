@@ -5,14 +5,21 @@ import csv
 import math
 import re
 import shutil
+import sys
 import xml.etree.ElementTree as ET
 from dataclasses import dataclass
 from pathlib import Path
 
 from PIL import Image
 
-from .common import find_page_image, normalize_text
-from .extract_page_lines import first_descendant, local_name
+if __package__:
+    from .common import find_page_image, normalize_text
+    from .extract_page_lines import first_descendant, local_name
+else:
+    # Support invoking this file directly as well as with ``python -m``.
+    sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
+    from historical_swedish.common import find_page_image, normalize_text
+    from historical_swedish.extract_page_lines import first_descendant, local_name
 
 
 @dataclass(frozen=True)
