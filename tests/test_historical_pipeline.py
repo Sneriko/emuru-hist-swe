@@ -10,6 +10,7 @@ from PIL import Image, ImageDraw
 
 from historical_swedish.common import crop_polygon, normalize_background, read_jsonl, write_jsonl
 from historical_swedish.extract_page_lines import extract
+from historical_swedish.sample_smoke_dataset import allocate_pages, evenly_spaced, sample
 
 
 PAGE_XML = """<?xml version="1.0" encoding="UTF-8"?>
@@ -95,3 +96,32 @@ def test_page_to_pairs_and_shards(tmp_path: Path) -> None:
     listed = (shard_dir / "train_shards.txt").read_text(encoding="utf-8").splitlines()
     assert len(listed) == 2
     assert json.loads((shard_dir / "counts.json").read_text(encoding="utf-8"))["train"] == 2
+
+
+def test_smoke_sampler_balances_volumes_and_preserves_layout(tmp_path: Path) -> None:
+    source = tmp_path / "source"
+    for volume_name, count in (("volume_a", 3), ("volume_b", 7)):
+        volume = source / volume_name
+        (volume / "page").mkdir(parents=True)
+        for number in range(1, count + 1):
+            stem = f"page_{number:04d}"
+            Image.new("RGB", (600, 160), "ivory").save(volume / f"{stem}.png")
+            xml = PAGE_XML.replace("page_0001.png", f"{stem}.png")
+            (volume / "page" / f"{stem}.xml").write_text(xml, encoding="utf-8")
+
+    output = tmp_path / "smoke"
+    selected = sample(argparse.Namespace(
+        root=source,
+        output=output,
+        pages=5,
+        xml_glob="*.xml",
+        min_lines=2,
+        overwrite=False,
+    ))
+
+    assert [sum(page.volume.name == name for page in selected) for name in ("volume_a", "volume_b")] == [1, 4]
+    assert len(list(output.glob("*/page/*.xml"))) == 5
+    assert len(list(output.glob("*/*.png"))) == 5
+    assert len((output / "smoke_selection.csv").read_text(encoding="utf-8").splitlines()) == 6
+    assert allocate_pages([3, 7], 5) == [1, 4]
+    assert [page.xml_path.stem for page in evenly_spaced(selected, 2)] == ["page_0001", "page_0005"]

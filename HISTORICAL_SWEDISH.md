@@ -66,6 +66,33 @@ requirements.
 
 ## Data preparation
 
+### Build the first smoke-test corpus
+
+Before processing all 30,000 pages, make a deterministic 2,000-page subset:
+
+```bash
+python -m historical_swedish.sample_smoke_dataset \
+  --root /data/ra/pagexml \
+  --output /data/ra/pagexml_smoke \
+  --pages 2000
+```
+
+The sampler keeps at least one page from every volume, distributes the remainder
+in proportion to the number of usable pages in each volume, and takes pages at
+evenly spaced positions through each volume (rather than taking only its first
+pages). A page is eligible only when its image opens successfully and its PAGE
+XML contains at least two transcribed lines with coordinates; this avoids pages
+that cannot produce a same-page style/target pair. The original relative tree
+and filenames are retained, so `page/image.xml` references and metadata paths
+continue to work. `smoke_selection.csv` records every choice. The command is
+repeatable and refuses a non-empty target unless `--overwrite` is supplied.
+
+If there are more volumes than requested pages, increase `--pages`: coverage of
+every volume is intentional. If fewer than 2,000 suitable pages exist, all
+suitable pages are copied. Then use `/data/ra/pagexml_smoke` as `DATA_ROOT` and
+run all of the preparation, validation, baseline training, reconstruction
+benchmark, and fine-tuning steps below before scaling up.
+
 Run the complete default path:
 
 ```bash
