@@ -125,3 +125,17 @@ def test_smoke_sampler_balances_volumes_and_preserves_layout(tmp_path: Path) -> 
     assert len((output / "smoke_selection.csv").read_text(encoding="utf-8").splitlines()) == 6
     assert allocate_pages([3, 7], 5) == [1, 4]
     assert [page.xml_path.stem for page in evenly_spaced(selected, 2)] == ["page_0001", "page_0005"]
+
+
+def test_smoke_sampler_supports_direct_script_invocation(tmp_path: Path) -> None:
+    script = Path(__file__).parents[1] / "historical_swedish" / "sample_smoke_dataset.py"
+
+    result = subprocess.run(
+        [sys.executable, str(script), "--help"],
+        cwd=tmp_path,
+        check=True,
+        capture_output=True,
+        text=True,
+    )
+
+    assert "Build a deterministic, volume-balanced" in result.stdout
